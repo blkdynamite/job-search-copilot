@@ -94,4 +94,7 @@ const doc = new Document({
   sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 720, bottom: 720, left: 720, right: 720 } } }, children: kids }],
 });
 const out = path.join(outDir, (D.output_name || D.name.replace(/\s+/g, "_") + "_Resume") + ".docx");
-Packer.toBuffer(doc).then(buf => { fs.writeFileSync(out, buf); console.log("wrote", out); });
+fs.mkdirSync(outDir, { recursive: true });
+Packer.toBuffer(doc)
+  .then(buf => { fs.writeFileSync(out, buf); console.log("wrote", out); })
+  .catch(err => { console.error("failed to write", out + ":", err.message); process.exit(1); });
