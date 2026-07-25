@@ -53,7 +53,8 @@ Transform the resume into a master template every tailored version inherits from
 1. **Rewrite every bullet with Google's XYZ formula**: "Accomplished [X] as measured by [Y], by doing [Z]." Pull real metrics from the user where bullets lack them — ask, don't invent. A bullet without a measurable Y should be flagged to the user, not fabricated.
 2. **Run the 10-second red-flag audit** — read `references/red_flags.md` for the full checklist, and report every flag found with its fix.
 3. **Structure**: contact header; 3-4 sentence summary; experience with a gray "Stack:" line under each title (tools visible to both ATS and skimming humans); selected projects; skills grouped into 4-6 labeled categories; education. Spell out abbreviations both ways once (e.g., "extract-transform-load (ETL)").
-4. **Build the file**: use `scripts/resume_builder.js` (see script header for usage). Fill `resume_data.json` with the user's real content. Always output both .docx and .pdf, verify the PDF is at most 2 pages (rebuild with tightened content if over), and present both files.
+4. **Build the resume.** First try to produce real files: fill `resume_data.json` with the user's real content and run `scripts/resume_builder.js` (see script header for usage), which needs Node and the `docx` package (`npm install docx`). Output both .docx and .pdf, verify the PDF is at most 2 pages (rebuild with tightened content if over), and present both files.
+   - **If file generation isn't available in this environment** — no code execution / file creation, or the sandbox has no network so `docx` can't install — don't error out or keep retrying. Fall back to delivering the complete resume as clean, copy-paste text: single column, standard section headings (Summary, Experience, Skills, Education), no tables or text boxes, formatted so the user can paste it straight into Google Docs or Word. Tell the user plainly that you've given text because this environment can't generate files, and that the two-page limit still applies once pasted.
 
 ## Phase 3 — Fresh-job search queries
 
@@ -70,14 +71,14 @@ Claude's own web search cannot reliably filter by posting date, and roughly half
 
 For every fetched job:
 
-1. **Check the tracker first** — never process a company/role already reviewed or already applied to (including rows imported from the user's pre-existing spreadsheet). Maintain a cumulative tracker (.xlsx) with columns: Company, Role, Salary, Location, Fit verdict, Resume file, Cover letter needed, Notes, Status, Date. Append each batch under a dated batch label.
+1. **Check the tracker first** — never process a company/role already reviewed or already applied to (including rows imported from the user's pre-existing spreadsheet). Maintain a cumulative tracker with columns: Company, Role, Salary, Location, Fit verdict, Resume file, Cover letter needed, Notes, Status, Date. Append each batch under a dated batch label. Deliver it as an .xlsx file when file generation is available; otherwise keep it as a clean Markdown table the user can copy.
 2. **Rank into three tiers with blunt reasons:**
    - **Strong**: requirements match, level match, pay at/above the user's stated band. Build immediately.
    - **Stretch**: 1-2 real gaps (title, years, one hard skill). Build, and name the wall the user will hit.
    - **Skip**: hard-requirement failure (degree, license, geography, work authorization), wrong function, severely below level/pay, or closed. State the reason in one line. Do not build unless the user insists after seeing the reason.
 3. **Flag missing requirements per job** (honesty rule 3) before building, so the user can supply real examples that strengthen the resume.
-4. **Generate one tailored resume per viable job** using the master as the base: rewrite the summary in the job's vocabulary, re-angle 2-4 bullets per relevant role toward the job's stated responsibilities (their exact phrases where truthful), reorder skills so the job's requirements lead, and keep everything else inherited. 2 pages, docx + pdf, filename `Firstname_Lastname_Resume_Company.docx`.
-5. **Present** all files plus the updated tracker, with a short per-job note on the angle taken and any interview risks to prepare for.
+4. **Generate one tailored resume per viable job** using the master as the base: rewrite the summary in the job's vocabulary, re-angle 2-4 bullets per relevant role toward the job's stated responsibilities (their exact phrases where truthful), reorder skills so the job's requirements lead, and keep everything else inherited. 2 pages. Deliver as docx + pdf named `Firstname_Lastname_Resume_Company.docx` when file generation is available, or as copy-paste text otherwise (same fallback as Phase 2).
+5. **Present** each result plus the updated tracker, with a short per-job note on the angle taken and any interview risks to prepare for.
 
 ## Screening questions and cover letters (on request)
 
@@ -85,7 +86,7 @@ When the user pastes application questions: draft answers built only on their co
 
 ## Output conventions
 
-- Resumes: Calibri, 2 pages max, verified via PDF page count before presenting.
+- Resumes: Calibri, 2 pages max, verified via PDF page count before presenting (or kept to two pages' worth of content when delivered as text).
 - Never include the user's home street address; city/metro is enough.
-- All deliverables presented as files (docx + pdf), never only as chat text.
-- The tracker is cumulative across the whole conversation — one file, growing.
+- Prefer real files (docx + pdf) whenever the environment can generate them; fall back to clean copy-paste text when it can't, and say which you're giving and why. Never silently error out because files aren't available.
+- The tracker is cumulative across the whole conversation — one file (or table), growing.
