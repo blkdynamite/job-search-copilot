@@ -40,8 +40,8 @@ Pick the method that matches how you use Claude.
 
 The app has no plugin system — you upload the skill as a zip:
 
-1. **Get the skill zip.** Download `job-search-copilot-skill.zip` from the
-   [Releases page](../../releases), or make one yourself by zipping the
+1. **Get the skill zip.** Download [`job-search-copilot-skill.zip`](job-search-copilot-skill.zip)
+   (open the link, then use GitHub's **Download** button), or make one yourself by zipping the
    `skills/job-search-copilot/` folder. (Don't use GitHub's green **Code → Download ZIP**
    button — it wraps everything in an extra repo folder that the uploader won't accept.)
 2. In Claude, open **Settings → Features → Skills** (also reachable via **Customize → Skills**)
