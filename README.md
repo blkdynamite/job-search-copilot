@@ -28,30 +28,41 @@ live interview follow-up.
 
 ## Install
 
-The skill is the `skill/` folder in this repo. Installing it means putting that folder where
-your Claude can find it.
+Pick the method that matches how your friend uses Claude.
 
-### Claude Code (CLI)
+### Claude Code — install as a plugin (recommended)
 
-```bash
-# clone the repo
-git clone https://github.com/blkdynamite/job-search-copilot.git
+This is the smoothest path: Claude Code downloads and installs it for you. In a Claude Code
+session, run:
 
-# copy the skill folder into your personal skills directory
-mkdir -p ~/.claude/skills
-cp -r job-search-copilot/skill ~/.claude/skills/job-search-copilot
+```
+/plugin marketplace add blkdynamite/job-search-copilot
+/plugin install job-search-copilot@job-search-copilot
 ```
 
-That's it — the next time you start Claude Code, it's available. You should end up with
-`~/.claude/skills/job-search-copilot/SKILL.md`.
+Then run `/reload-plugins` (or restart). To update later, run
+`/plugin marketplace update job-search-copilot`. Because it's installed as a plugin, the skill
+is namespaced — you can invoke it explicitly with `/job-search-copilot:job-search-copilot`, and
+Claude also triggers it automatically when you mention job hunting.
 
-To share it with a whole project/team instead of just yourself, copy it into that repo's
+### Claude Code — manual copy (no plugin system)
+
+```bash
+git clone https://github.com/blkdynamite/job-search-copilot.git
+mkdir -p ~/.claude/skills
+cp -r job-search-copilot/skills/job-search-copilot ~/.claude/skills/job-search-copilot
+```
+
+You should end up with `~/.claude/skills/job-search-copilot/SKILL.md`. It's available next
+session. To share it with a whole project/team instead, copy it into that repo's
 `.claude/skills/` folder and commit it.
 
 ### Claude app (claude.ai / desktop)
 
-1. Download this repo as a ZIP (green **Code** button → **Download ZIP**), or zip the `skill/`
-   folder yourself.
+The app doesn't use plugins — upload the skill folder instead:
+
+1. Download this repo as a ZIP (green **Code** button → **Download ZIP**), or zip the
+   `skills/job-search-copilot/` folder yourself.
 2. In the Claude app, go to **Settings → Capabilities → Skills**.
 3. Upload the zipped skill folder.
 
@@ -67,13 +78,23 @@ you've already applied to) and walk through each phase with you.
 ## What's inside
 
 ```
-skill/
-├── SKILL.md                  # the workflow instructions Claude follows
-├── references/red_flags.md   # the 10-second resume red-flag checklist
-└── scripts/resume_builder.js # generates the 2-page .docx resume
+.claude-plugin/
+├── marketplace.json          # lets Claude Code install this repo as a plugin
+└── plugin.json               # plugin manifest (name, version, author)
+skills/
+└── job-search-copilot/
+    ├── SKILL.md              # the workflow instructions Claude follows
+    ├── references/red_flags.md   # the 10-second resume red-flag checklist
+    └── scripts/resume_builder.js # generates the 2-page .docx resume
 ```
+
+The repo is both a **plugin marketplace** (for the `/plugin install` flow) and a plain
+**skill folder** under `skills/` (for manual copy or app upload) — one copy of the skill, two
+ways to install.
 
 ## Sharing it
 
-Send friends the link to this repo. To update the skill later, edit the files in `skill/`,
-commit, and push — anyone who cloned it just re-pulls and re-copies the folder.
+Send friends the link to this repo. To update the skill later, edit the files under
+`skills/job-search-copilot/`, bump the `version` in both `.claude-plugin/plugin.json` and
+`.claude-plugin/marketplace.json`, commit, and push. Plugin users get the update with
+`/plugin marketplace update job-search-copilot`; manual users re-pull and re-copy.
