@@ -1,0 +1,11 @@
+{
+  "name": "job-search-copilot",
+  "description": "Acts as a senior recruiter: analyzes your resume, builds a master resume, generates fresh-job search queries, triages postings honestly (Strong/Stretch/Skip), and produces a tailored 2-page resume per job plus a running application tracker.",
+  "version": "1.0.0",
+  "author": {
+    "name": "blkdynamite"
+  },
+  "homepage": "https://github.com/blkdynamite/job-search-copilot",
+  "repository": "https://github.com/blkdynamite/job-search-copilot",
+  "license": "MIT"
+}

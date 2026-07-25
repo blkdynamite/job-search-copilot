@@ -1,0 +1,15 @@
+{
+  "name": "job-search-copilot",
+  "description": "A recruiter-grade job-search workflow: resume analysis, tailored resumes, honest posting triage, and an application tracker.",
+  "owner": {
+    "name": "blkdynamite"
+  },
+  "plugins": [
+    {
+      "name": "job-search-copilot",
+      "source": "./",
+      "description": "Acts as a senior recruiter: analyzes your resume, builds a master resume, generates fresh-job search queries, triages postings honestly (Strong/Stretch/Skip), and produces a tailored 2-page resume per job plus a running application tracker.",
+      "version": "1.0.0"
+    }
+  ]
+}
