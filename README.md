@@ -57,14 +57,22 @@ You should end up with `~/.claude/skills/job-search-copilot/SKILL.md`. It's avai
 session. To share it with a whole project/team instead, copy it into that repo's
 `.claude/skills/` folder and commit it.
 
-### Claude app (claude.ai / desktop)
+### Claude app (claude.ai / desktop) — most people
 
-The app doesn't use plugins — upload the skill folder instead:
+The app has no plugin system — you upload the skill as a zip:
 
-1. Download this repo as a ZIP (green **Code** button → **Download ZIP**), or zip the
-   `skills/job-search-copilot/` folder yourself.
-2. In the Claude app, go to **Settings → Capabilities → Skills**.
-3. Upload the zipped skill folder.
+1. Get the skill zip — download `job-search-copilot-skill.zip` from the repo's
+   [Releases](https://github.com/blkdynamite/job-search-copilot/releases), or make one by
+   zipping the `skills/job-search-copilot/` folder.
+2. In the Claude app, go to **Settings → Features → Skills** and choose **Upload skill**.
+3. Upload the zip. It appears in your skills list, enabled.
+
+Notes, straight from Anthropic's docs:
+- **Plan**: custom skills work on **Pro, Max, Team, or Enterprise**, with **code execution /
+  file creation enabled** in settings. Free accounts can't upload custom skills.
+- **Per-user**: on claude.ai each person uploads the skill to their own account — there's no
+  org-wide install, and admins can't push it to everyone.
+- **Trust**: the app only lets you add skills you trust. Since you know the author, it's safe.
 
 ## Using it
 
