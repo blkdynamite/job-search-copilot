@@ -30,6 +30,12 @@ the starting point.
 
 Pick the method that matches how you use Claude.
 
+> **Easiest, any plan (incl. Free):** grab [`job-search-copilot-standalone.md`](job-search-copilot-standalone.md),
+> attach it to a new Claude chat, and say *"follow these instructions and help me with my job
+> search."* It's the whole skill in one paste-in file (red-flag checklist included), with a
+> text fallback for plans that can't generate files. No install required. The methods below give
+> a more polished, persistent experience on paid plans.
+
 ### Claude app (claude.ai / desktop) — most people
 
 The app has no plugin system — you upload the skill as a zip:
