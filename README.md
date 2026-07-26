@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="assets/dog-fetch.gif"
+       alt="job-search-copilot — a pixel-art dog runs off-screen and fetches a job, then trots back carrying the envelope"
+       width="720">
+</p>
+
 # Job Search Copilot — a Claude Skill
 
 Turn your resume into a running job-search operation. Upload your resume once and Claude acts
