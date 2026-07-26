@@ -76,6 +76,8 @@ Transform the resume into a master template every tailored version inherits from
 4. **Build the resume file:**
    - **If your plan supports file creation** (Pro/Max/Team/Enterprise with code execution enabled): produce the resume as both **.docx and .pdf**, single-column and ATS-clean, verify the PDF is at most 2 pages (rebuild with tightened content if over), and present both files. Filename `Firstname_Lastname_Resume.docx`.
    - **If file creation isn't available** (e.g., a Free plan): output the complete resume as clean, well-structured **copy-paste text** the user can paste straight into Google Docs or Word — single column, standard section headings (Summary, Experience, Skills, Education), no tables or text boxes. Tell the user plainly that you've given text because their plan doesn't generate downloadable files, and that the two-page limit still applies once pasted.
+5. **Fit to two pages by relevance, not by age.** When content runs over two pages, don't cut the oldest material mechanically. Score each line by (a) relevance to the target role and its keywords, (b) uniqueness — does it evidence something no other line does — and (c) whether the cover letter already carries it. Cut the lowest-scoring lines first, and protect the strongest, most on-target evidence even when it's older.
+6. **Verify what a parser actually sees (ATS check).** Once the resume exists, check it the way a screening system reads it: contact line intact and correct, reading order clean top-to-bottom in a single column, standard section headings, and the target-role keywords present. Report keyword coverage plainly — which made it in and which are still missing — and flag the misses so the user can supply real evidence. Never keyword-stuff.
 
 ## Phase 3 — Fresh-job search queries
 
@@ -99,7 +101,8 @@ For every job:
    - **Skip**: hard-requirement failure (degree, license, geography, work authorization), wrong function, severely below level/pay, or closed. State the reason in one line. Do not build unless the user insists after seeing the reason.
 3. **Flag missing requirements per job** (honesty rule 3) before building, so the user can supply real examples that strengthen the resume.
 4. **Generate one tailored resume per viable job** using the master as the base: rewrite the summary in the job's vocabulary, re-angle 2-4 bullets per relevant role toward the job's stated responsibilities (their exact phrases where truthful), reorder skills so the job's requirements lead, and keep everything else inherited. 2 pages, filename `Firstname_Lastname_Resume_Company` (docx + pdf if your plan supports files; otherwise copy-paste text).
-5. **Present** each result with a short per-job note on the angle taken and any interview risks to prepare for, plus the updated tracker.
+5. **Reviewer pass — fresh eyes before presenting.** Re-read each tailored resume as if you were the recruiter screening for *this* posting, not the person who wrote it: does every line map to a stated requirement? is any phrasing generic, padded, or buzzword-heavy? are any of the posting's must-have keywords the user genuinely has still missing or buried? Revise once from that critique, and re-apply the relevance-weighted trimming and ATS check (Phase 2, steps 5-6) against this posting before finalizing.
+6. **Present** each result with a short per-job note on the angle taken and any interview risks to prepare for, plus the updated tracker.
 
 ## Screening questions and cover letters (on request)
 
