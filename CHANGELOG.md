@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-07-29
+
+### Added
+- **Phase 5 — Proof of work**: for each Strong/Stretch job, the skill now offers a role-specific
+  artifact that shows the candidate can do the job (BD/Sales → target-account teardown; Ops → a
+  working tool/model/SOP; Marketing → campaign teardown; and function-matched artifacts for CS,
+  Recruiting, and a generic 30-60-90 / problem-analysis fallback), built on the user's confirmation.
+- `references/proof_of_work.md` — the function→artifact map plus honesty guardrails (real evidence
+  only, hypotheticals labeled as such, focus on the listed role, respect no-AI postings).
+- **Intake-driven cover letters** — the skill now asks the user to describe their relevant
+  experience, impact, and what draws them to the company, and drafts only from that real input;
+  no-AI postings get an outline + the user's own talking points to write themselves.
+- **Two new honesty rules** — never fabricate proof of work, and focus every artifact on the
+  listed job — plus a "quality beats volume" note steering toward exceptional complete
+  applications over cold-email spray, and a new **Proof of work** column in the tracker.
+
+### Changed
+- Applied all of the above to both `SKILL.md` and the standalone paste-in file (map inlined there),
+  and regenerated `job-search-copilot-skill.zip`.
+
 ## [1.1.0] — 2026-07-26
 
 ### Added
@@ -35,5 +55,6 @@ All notable changes to this project are documented here. The format is based on
 - Graceful fallback to copy-paste text/Markdown when the runtime can't generate files.
 - `README.md`, `LICENSE` (MIT), and a committed `job-search-copilot-skill.zip` download.
 
+[1.2.0]: https://github.com/blkdynamite/job-search-copilot/releases/tag/v1.2.0
 [1.1.0]: https://github.com/blkdynamite/job-search-copilot/releases/tag/v1.1.0
 [1.0.0]: https://github.com/blkdynamite/job-search-copilot/releases/tag/v1.0.0
