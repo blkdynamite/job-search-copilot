@@ -10,11 +10,14 @@ export type DocumentBlock = {
 };
 export type ContentBlock = TextBlock | DocumentBlock;
 
+export type ResumeFiles = { docxUrl: string | null; pdfUrl: string | null };
+
 export type ChatMessage = {
   role: Role;
   display: string; // what the bubble shows
   api: ContentBlock[] | null; // API-shaped content; null for the seeded opening
   phase?: number;
+  files?: ResumeFiles; // download buttons (resume template result)
 };
 
 export const PHASES = [

@@ -40,6 +40,7 @@ export default function Chat({ userEmail }: { userEmail: string }) {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [loadingSet, setLoadingSet] = useState<string[]>(LOADING_SETS["0"]);
   const [tick, setTick] = useState(0);
+  const [hasResume, setHasResume] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -75,6 +76,7 @@ export default function Chat({ userEmail }: { userEmail: string }) {
       if (file) {
         // Persist + extract server-side, then send the text (cheaper than re-sending base64 each turn).
         const resumeText = await uploadResume(file);
+        setHasResume(true);
         apiContent = [{ type: "text", text: `Here is my resume:\n\n${resumeText}${text ? `\n\n${text}` : ""}` }];
       } else {
         apiContent = [{ type: "text", text }];
@@ -164,6 +166,48 @@ export default function Chat({ userEmail }: { userEmail: string }) {
         return copy;
       });
       setError(e instanceof Error ? e.message : "Something went wrong. Send again to retry.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function buildTemplate() {
+    if (loading || !hasResume) return;
+    setError(null);
+    setLoadingSet(LOADING_SETS["2"]);
+    setTick(0);
+    setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", display: "🛠️ Build my resume template", api: null }]);
+
+    try {
+      const resp = await fetch("/api/resume/template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || "Template build failed.");
+
+      const diffLines = (data.diffs || [])
+        .map((d: { before: string; after: string }) => `Before: ${d.before}\nAfter: ${d.after}`)
+        .join("\n\n");
+      const display = `**What I fixed**\n\n${data.summary_of_fixes}${diffLines ? `\n\n${diffLines}` : ""}`;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          display,
+          api: null,
+          phase: 2,
+          files: { docxUrl: data.docxUrl ?? null, pdfUrl: data.pdfUrl ?? null },
+        },
+      ]);
+      setPhase((p) => Math.max(p, 2));
+    } catch (e) {
+      // Roll back the action bubble; surface the error.
+      setMessages((prev) => prev.slice(0, -1));
+      setError(e instanceof Error ? e.message : "Template build failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -260,6 +304,28 @@ export default function Chat({ userEmail }: { userEmail: string }) {
                 ) : (
                   <Markdown text={m.display} />
                 )}
+                {m.files && (m.files.docxUrl || m.files.pdfUrl) && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {m.files.docxUrl && (
+                      <a
+                        href={m.files.docxUrl}
+                        className="text-xs font-display font-semibold px-3 py-2 rounded-xl text-white"
+                        style={{ background: "#0E7490" }}
+                      >
+                        ⬇ Download .docx
+                      </a>
+                    )}
+                    {m.files.pdfUrl && (
+                      <a
+                        href={m.files.pdfUrl}
+                        className="text-xs font-display font-semibold px-3 py-2 rounded-xl"
+                        style={{ background: "#E0F2F7", color: "#0E4A5C" }}
+                      >
+                        ⬇ Download .pdf
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -285,6 +351,22 @@ export default function Chat({ userEmail }: { userEmail: string }) {
       {/* Composer */}
       <div className="px-4 pb-5 pt-2 bg-dawn">
         <div className="max-w-2xl mx-auto">
+          {hasResume && (
+            <div className="mb-2">
+              <button
+                onClick={buildTemplate}
+                disabled={loading}
+                className="text-xs font-display font-semibold px-3 py-2 rounded-xl"
+                style={{
+                  background: loading ? "#F2F4F7" : "#FFF6ED",
+                  color: loading ? "#98A2B3" : "#B54708",
+                  border: "1px solid #FED7AA",
+                }}
+              >
+                🛠️ Build resume template (.docx + .pdf)
+              </button>
+            </div>
+          )}
           {pendingFile && (
             <div
               className="flex items-center gap-2 mb-2 text-xs px-3 py-2 rounded-lg w-fit font-mono text-amber"
