@@ -9,15 +9,26 @@ every line must survive an interview.**
 > (`../skills/job-search-copilot/SKILL.md`) is the source of truth; this app embeds it as the
 > system prompt with production deltas.
 
-## Status — v1, in progress
+## Status — v1 feature-complete
 
-Built so far: scaffold + isolated Supabase schema + the streaming chat agent (landing, chat UI with
-the phase rail, server-side `/api/chat`, system prompt), **magic-link auth** (login → email link →
-session, gated `/chat`, sign-out), and **resume upload** (`/api/resume/upload` — server-side text
-extraction via `unpdf`, stored to the `firsthour-resumes` Storage bucket, recorded in
-`firsthour_resumes`; the chat sends the extracted text for Phase 1). **Not yet built:** the docx/pdf
-resume pipeline, the shared jobs index (SerpAPI/ATS), the tailor + credits flow, cover-letter intake
-endpoint, and cron/digests.
+The full recruiter loop is built:
+- **Auth** — magic-link (login → email link → session), gated `/chat`, sign-out.
+- **Resume upload** — `/api/resume/upload`, server-side text extraction (`unpdf`), stored to the
+  `firsthour-resumes` bucket.
+- **Resume template** — `/api/resume/template`, docx + pdf (2-page verified) from one `ResumeContent`.
+- **Autonomous jobs** — cache-first shared index (mock provider by default; Serper one env var away),
+  Haiku triage → Strong/Stretch/Skip matches, honest freshness. Paste path supported too.
+- **Tailor + credits** — `/api/tailor` per job, atomic credit spend, tracked.
+- **Cover letters** — `/api/cover-letter`, intake-driven; no-AI postings get an outline.
+- **Tracker** — `/tracker` view with editable status + download links.
+- **Cron + email** — nightly `/api/cron/daily` (hunt + triage + digest) and `/api/cron/nudge`
+  (stale-application follow-up) via Resend + Vercel Cron; inert until `RESEND_API_KEY` + `CRON_SECRET`
+  are set.
+
+**Remaining setup before it runs live:** Supabase Auth redirect URLs (below); apply
+`supabase/migrations/0003_credits.sql` (tailor-credit function); set `ANTHROPIC_API_KEY`, Supabase
+keys, and — to go beyond the mock provider / enable email — `SERPER_API_KEY`, `RESEND_API_KEY`,
+`EMAIL_FROM`, `CRON_SECRET`.
 
 ### Supabase Auth config (one-time, in the dashboard)
 For magic links to work, in the Dap_app project's **Authentication → URL Configuration**: set the
