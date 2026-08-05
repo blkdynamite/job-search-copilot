@@ -48,6 +48,10 @@ export default function Chat({ userEmail, initialCredits }: { userEmail: string;
   const [prefTitles, setPrefTitles] = useState("");
   const [prefLocation, setPrefLocation] = useState("");
   const [prefRemote, setPrefRemote] = useState(false);
+  const [coverJob, setCoverJob] = useState<{ id: string; company: string } | null>(null);
+  const [cExperience, setCExperience] = useState("");
+  const [cImpact, setCImpact] = useState("");
+  const [cMotivation, setCMotivation] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -335,6 +339,54 @@ export default function Chat({ userEmail, initialCredits }: { userEmail: string;
     }
   }
 
+  function openCoverLetter(jobId: string, company: string) {
+    setError(null);
+    setCExperience("");
+    setCImpact("");
+    setCMotivation("");
+    setCoverJob({ id: jobId, company });
+  }
+
+  async function submitCoverLetter() {
+    if (loading || !coverJob) return;
+    if (!cExperience.trim() || !cMotivation.trim()) {
+      setError("Add your relevant experience and what draws you to the company — I only write from your real input.");
+      return;
+    }
+    const job = coverJob;
+    setError(null);
+    setCoverJob(null);
+    setLoadingSet(LOADING_SETS["2"]);
+    setTick(0);
+    setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", display: `✍️ Cover letter for ${job.company}`, api: null }]);
+    try {
+      const resp = await fetch("/api/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: job.id,
+          intake: { experience: cExperience.trim(), impact: cImpact.trim(), motivation: cMotivation.trim() },
+        }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || "Cover letter failed.");
+      const header =
+        data.mode === "outline_only"
+          ? `**Outline for ${data.company || job.company}** — this employer asks you to write it yourself, so here's scaffolding in your own words, not a final letter.`
+          : `**Cover letter — ${data.company || job.company}** (review and make it yours before sending)`;
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", display: `${header}\n\n${data.body}`, api: null, phase: 4 },
+      ]);
+    } catch (e) {
+      setMessages((prev) => prev.slice(0, -1));
+      setError(e instanceof Error ? e.message : "Cover letter failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function savePrefs() {
     const titles = prefTitles.split(",").map((s) => s.trim()).filter(Boolean);
     if (!titles.length) {
@@ -522,14 +574,24 @@ export default function Chat({ userEmail, initialCredits }: { userEmail: string;
                               View posting ↗
                             </a>
                             {mv.verdict !== "skip" && (
-                              <button
-                                onClick={() => tailorJob(mv.jobId, mv.company || "this job")}
-                                disabled={loading}
-                                className="text-xs font-display font-semibold px-2 py-1 rounded-lg"
-                                style={{ background: loading ? "#F2F4F7" : "#DC6803", color: loading ? "#98A2B3" : "#FFFFFF" }}
-                              >
-                                ✂️ Tailor for this job
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => tailorJob(mv.jobId, mv.company || "this job")}
+                                  disabled={loading}
+                                  className="text-xs font-display font-semibold px-2 py-1 rounded-lg"
+                                  style={{ background: loading ? "#F2F4F7" : "#DC6803", color: loading ? "#98A2B3" : "#FFFFFF" }}
+                                >
+                                  ✂️ Tailor
+                                </button>
+                                <button
+                                  onClick={() => openCoverLetter(mv.jobId, mv.company || "this job")}
+                                  disabled={loading}
+                                  className="text-xs font-display font-semibold px-2 py-1 rounded-lg"
+                                  style={{ background: "#F2F4F7", color: loading ? "#98A2B3" : "#475467" }}
+                                >
+                                  ✍️ Cover letter
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
@@ -624,6 +686,54 @@ export default function Chat({ userEmail, initialCredits }: { userEmail: string;
                 </button>
                 <button
                   onClick={() => setPrefsOpen(false)}
+                  className="text-xs font-mono px-3 py-2 rounded-xl"
+                  style={{ color: "#475467", background: "#F2F4F7" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {coverJob && (
+            <div className="mb-2 p-3 rounded-2xl bg-white flex flex-col gap-2" style={{ border: "1px solid #D7DEE8" }}>
+              <p className="text-xs font-display font-semibold text-ink">
+                Cover letter for {coverJob.company} — in your own words (I only write from real input)
+              </p>
+              <textarea
+                value={cExperience}
+                onChange={(e) => setCExperience(e.target.value)}
+                rows={2}
+                placeholder="Your most relevant experience for this role"
+                className="px-3 py-2 rounded-xl outline-none text-sm bg-white text-ink resize-none"
+                style={{ border: "1px solid #D7DEE8" }}
+              />
+              <textarea
+                value={cImpact}
+                onChange={(e) => setCImpact(e.target.value)}
+                rows={2}
+                placeholder="A concrete impact you had (real numbers where you have them)"
+                className="px-3 py-2 rounded-xl outline-none text-sm bg-white text-ink resize-none"
+                style={{ border: "1px solid #D7DEE8" }}
+              />
+              <textarea
+                value={cMotivation}
+                onChange={(e) => setCMotivation(e.target.value)}
+                rows={2}
+                placeholder="What specifically draws you to this company"
+                className="px-3 py-2 rounded-xl outline-none text-sm bg-white text-ink resize-none"
+                style={{ border: "1px solid #D7DEE8" }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={submitCoverLetter}
+                  disabled={loading}
+                  className="text-xs font-display font-semibold px-3 py-2 rounded-xl text-white"
+                  style={{ background: "#DC6803" }}
+                >
+                  Write it
+                </button>
+                <button
+                  onClick={() => setCoverJob(null)}
                   className="text-xs font-mono px-3 py-2 rounded-xl"
                   style={{ color: "#475467", background: "#F2F4F7" }}
                 >
