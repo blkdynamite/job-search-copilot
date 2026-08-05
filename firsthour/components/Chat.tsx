@@ -433,6 +433,9 @@ export default function Chat({ userEmail, initialCredits }: { userEmail: string;
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <a href="/tracker" className="text-xs font-mono px-2 py-1 rounded-lg" style={{ color: "#475467", background: "#F2F4F7" }}>
+            Tracker
+          </a>
           <span
             className="text-xs font-mono px-2 py-1 rounded-lg"
             title="Tailored resumes remaining"
