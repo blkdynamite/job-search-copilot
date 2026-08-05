@@ -10,13 +10,14 @@ import {
 } from "@/lib/chat";
 import { Markdown } from "./Markdown";
 
-function readFileAsBase64(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result).split(",")[1]);
-    r.onerror = () => rej(new Error("Could not read file"));
-    r.readAsDataURL(file);
-  });
+// Upload a resume PDF: persists it to Storage and returns server-extracted text.
+async function uploadResume(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const resp = await fetch("/api/resume/upload", { method: "POST", body: fd });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data.error || "Couldn't read that PDF. Try again or paste the text.");
+  return (data.text as string) || "";
 }
 
 // API-shaped history: user messages carry content blocks; assistant messages are their display text.
@@ -30,7 +31,7 @@ function toApiMessages(msgs: ChatMessage[]) {
     );
 }
 
-export default function Chat() {
+export default function Chat({ userEmail }: { userEmail: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([OPENING]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,39 +57,44 @@ export default function Chat() {
   async function send() {
     if (loading) return;
     const text = input.trim();
-    if (!text && !pendingFile) return;
+    const file = pendingFile;
+    if (!text && !file) return;
     setError(null);
-
-    const hadFile = !!pendingFile;
-    setLoadingSet(hadFile ? LOADING_SETS.file : LOADING_SETS[String(phase)] ?? LOADING_SETS["0"]);
+    setLoadingSet(file ? LOADING_SETS.file : LOADING_SETS[String(phase)] ?? LOADING_SETS["0"]);
     setTick(0);
+    setInput("");
+    setPendingFile(null);
+    setLoading(true);
 
-    const apiContent: ContentBlock[] = [];
-    let displayText = text;
+    // Show the user bubble immediately (api filled once any upload+extraction finishes).
+    const displayText = file ? `📄 ${file.name}` + (text ? `\n${text}` : "") : text;
+    setMessages((prev) => [...prev, { role: "user", display: displayText, api: null }]);
+
+    let apiContent: ContentBlock[];
     try {
-      if (pendingFile) {
-        const b64 = await readFileAsBase64(pendingFile);
-        apiContent.push({
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: b64 },
-        });
-        displayText = `📄 ${pendingFile.name}` + (text ? `\n${text}` : "");
+      if (file) {
+        // Persist + extract server-side, then send the text (cheaper than re-sending base64 each turn).
+        const resumeText = await uploadResume(file);
+        apiContent = [{ type: "text", text: `Here is my resume:\n\n${resumeText}${text ? `\n\n${text}` : ""}` }];
+      } else {
+        apiContent = [{ type: "text", text }];
       }
-      apiContent.push({ type: "text", text: text || "Here is my resume." });
-    } catch {
-      setError("Couldn't read that file. Try again or paste the text.");
+    } catch (e) {
+      // Roll back the user bubble; nothing was sent.
+      setMessages((prev) => prev.slice(0, -1));
+      setLoading(false);
+      setError(e instanceof Error ? e.message : "Couldn't read that file. Try again or paste the text.");
       return;
     }
 
     const userMsg: ChatMessage = { role: "user", display: displayText, api: apiContent };
     const next = [...messages, userMsg];
-    setMessages(next);
-    setInput("");
-    setPendingFile(null);
-    setLoading(true);
-
-    // Placeholder assistant bubble we stream into.
-    setMessages((prev) => [...prev, { role: "assistant", display: "", api: null, phase }]);
+    // Commit the user message's api content and add the assistant placeholder we stream into.
+    setMessages((prev) => {
+      const copy = [...prev];
+      copy[copy.length - 1] = userMsg;
+      return [...copy, { role: "assistant", display: "", api: null, phase }];
+    });
 
     try {
       const resp = await fetch("/api/chat", {
@@ -187,8 +193,21 @@ export default function Chat() {
             beta
           </span>
         </div>
-        <div className="text-xs font-mono text-slate">
-          <span className="text-amber">●</span> the swarm hasn&apos;t found them yet
+        <div className="flex items-center gap-3">
+          {userEmail && (
+            <span className="text-xs font-mono hidden sm:inline" style={{ color: "#98A2B3" }}>
+              {userEmail}
+            </span>
+          )}
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="text-xs font-mono px-2 py-1 rounded-lg"
+              style={{ color: "#475467", background: "#F2F4F7" }}
+            >
+              Sign out
+            </button>
+          </form>
         </div>
       </header>
 

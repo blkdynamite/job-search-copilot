@@ -1,6 +1,7 @@
 import { anthropic } from "@/lib/anthropic";
 import { SYSTEM_PROMPT } from "@/lib/systemPrompt";
 import { MODELS } from "@/lib/models";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,6 +14,12 @@ export const maxDuration = 60;
 // exactly as the prototype did. The production shared-index pipeline (SerpAPI/ATS → jobs table)
 // will replace this in a later build step; the system prompt's Phase 3 instructions stay the same.
 export async function POST(req: Request) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Response("Unauthorized", { status: 401 });
+
   let body: { messages?: unknown };
   try {
     body = await req.json();

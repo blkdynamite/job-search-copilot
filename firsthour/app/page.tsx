@@ -44,7 +44,7 @@ export default function Home() {
             Start with your resume
           </Link>
           <span className="text-xs font-mono" style={{ color: "#98A2B3" }}>
-            No account needed to try
+            Free — just your email
           </span>
         </div>
       </section>

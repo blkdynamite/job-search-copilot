@@ -11,11 +11,19 @@ every line must survive an interview.**
 
 ## Status — v1, in progress
 
-This is the first vertical slice (build-order steps 1–2 of `PLAN`): scaffold + schema + the
-streaming chat agent. Landing page, chat UI (with the phase rail), the server-side `/api/chat`
-route, the system prompt, and the Supabase schema are in place. **Not yet built:** magic-link auth,
-resume upload + text extraction, the docx/pdf pipeline, the shared jobs index (SerpAPI/ATS), the
-tailor + credits flow, cover-letter intake endpoint, and cron/digests.
+Built so far: scaffold + isolated Supabase schema + the streaming chat agent (landing, chat UI with
+the phase rail, server-side `/api/chat`, system prompt), **magic-link auth** (login → email link →
+session, gated `/chat`, sign-out), and **resume upload** (`/api/resume/upload` — server-side text
+extraction via `unpdf`, stored to the `firsthour-resumes` Storage bucket, recorded in
+`firsthour_resumes`; the chat sends the extracted text for Phase 1). **Not yet built:** the docx/pdf
+resume pipeline, the shared jobs index (SerpAPI/ATS), the tailor + credits flow, cover-letter intake
+endpoint, and cron/digests.
+
+### Supabase Auth config (one-time, in the dashboard)
+For magic links to work, in the Dap_app project's **Authentication → URL Configuration**: set the
+**Site URL** to your deployment (e.g. `http://localhost:3000` for dev) and add
+`<site>/auth/confirm` to **Redirect URLs**. Email/magic-link sign-in must be enabled (it is by
+default).
 
 ## Stack
 
