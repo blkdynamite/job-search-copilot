@@ -26,6 +26,12 @@ query in Google, keyword-variant doubling for ATS string matching ("A/B testing
 that prevents double-applying — including importing your existing applications spreadsheet as
 the starting point.
 
+**It helps you stand out, not just apply.** A tailored resume is table stakes. This skill offers a
+role-specific **proof-of-work** artifact for your best-fit jobs — a target-account teardown for a
+BD role, a working tool for an Ops role, a campaign teardown for Marketing — that shows upfront you
+can do the job. Built from *your* real experience (nothing fabricated), and paired with a cover
+letter grounded in what you actually did, because a standout application beats a cold email.
+
 ## Install
 
 Pick the method that matches how you use Claude.
@@ -98,6 +104,7 @@ ranked verdicts and tailored resumes.
 | 2. Master resume | Answer its questions (real metrics!) | XYZ-formula rewrite, red-flag audit, 2-page docx + pdf |
 | 3. Fresh jobs | Run its Google queries, paste links back | Fetches, verifies still-open, reports dead links |
 | 4. Applications | Decide, submit, report back | Strong/Stretch/Skip triage, tailored resume per job, tracker update |
+| 5. Proof of work | Say yes, supply real specifics | Offers a role-specific artifact that shows you can do the job (account teardown, working tool, campaign teardown…), built from your real experience |
 
 ## What's inside
 
@@ -109,6 +116,7 @@ skills/
 └── job-search-copilot/
     ├── SKILL.md                # the skill's full instructions
     ├── references/red_flags.md # 10-second red-flag audit + XYZ formula + ATS reality
+    ├── references/proof_of_work.md # function→artifact map for the stand-out proof-of-work deliverable
     └── scripts/resume_builder.js # generic 2-page docx resume generator
 ```
 

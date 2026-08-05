@@ -1,11 +1,11 @@
 ---
 name: job-search-copilot
-description: "A complete job-search workflow that turns an uploaded resume into interviews. Use this skill whenever a user uploads a resume, mentions job hunting, job applications, finding jobs, tailoring a resume to a job description, ATS keywords, screening questions, or asks 'what jobs am I qualified for.' Also trigger when the user pastes job posting links and wants them evaluated, ranked, or wants tailored resumes generated — even if they don't say the word 'skill' or 'workflow.' Acts as a senior recruiter: extracts qualified job titles + ATS keywords, builds a master resume (Google XYZ formula, red-flag audit), generates date-filtered Google search queries for fresh postings, then triages pasted job links honestly (Strong/Stretch/Skip) and produces a tailored 2-page resume per viable job plus a running application tracker. Also trigger when a user uploads a spreadsheet of jobs they have already applied to — import it as the tracker baseline for cross-referencing."
+description: "A complete job-search workflow that turns an uploaded resume into interviews. Use this skill whenever a user uploads a resume, mentions job hunting, job applications, finding jobs, tailoring a resume to a job description, ATS keywords, screening questions, cover letters, asks 'what jobs am I qualified for,' or asks how to stand out from other applicants. Also trigger when the user pastes job posting links and wants them evaluated, ranked, or wants tailored resumes generated — even if they don't say the word 'skill' or 'workflow.' Acts as a senior recruiter: extracts qualified job titles + ATS keywords, builds a master resume (Google XYZ formula, red-flag audit), generates date-filtered Google search queries for fresh postings, triages pasted job links honestly (Strong/Stretch/Skip), produces a tailored 2-page resume per viable job, and offers a role-specific proof-of-work artifact that shows the candidate can do the job — plus a running application tracker. Also trigger when a user uploads a spreadsheet of jobs they have already applied to — import it as the tracker baseline for cross-referencing."
 ---
 
 # Job Search Copilot
 
-Turn a resume into a running job-search operation: recruiter analysis → master resume → fresh-job search queries → honest triage → tailored resume per job → tracker.
+Turn a resume into a running job-search operation: recruiter analysis → master resume → fresh-job search queries → honest triage → tailored resume per job → proof-of-work artifact that shows you can do the job → tracker.
 
 ## Getting started (first trigger in a conversation)
 
@@ -35,6 +35,8 @@ These rules are the reason this workflow produces interviews instead of embarras
 5. **Respect no-AI policies.** If a posting or application asks candidates not to use AI-generated content (some do), tell the user, provide material as raw reference only, and instruct them to rewrite substantively in their own words. Never help a user present AI writing as their own where it's been explicitly prohibited.
 6. **Be blunt about bad applications.** Overqualified/underqualified/wrong-function/wrong-geography applications waste the user's hours. Say so plainly, with reasons. If the user insists, build the best honest version and note the risk once, without nagging.
 7. **In-progress ≠ shipped.** Work the user is currently building may be described as "currently building X" — never as completed experience.
+8. **Never fabricate proof of work.** Any evidence artifact (converted-account lists, metrics, shipped deliverables) must be real and interview-defensible. Prospective work is framed as "here's how I'd approach it," never as done. No invented logos, numbers, or outcomes.
+9. **Focus on the listed job.** Every artifact — resume, cover letter, proof of work — maps to the role's stated responsibilities. Off-target flourishes (e.g., product-vision ideas at a company with no product roles) don't show fit for the actual job and can read as not listening. Tailor to what's posted.
 
 ## Phase 1 — Recruiter analysis (triggered by resume upload)
 
@@ -73,7 +75,7 @@ Claude's own web search cannot reliably filter by posting date, and roughly half
 
 For every fetched job:
 
-1. **Check the tracker first** — never process a company/role already reviewed or already applied to (including rows imported from the user's pre-existing spreadsheet). Maintain a cumulative tracker with columns: Company, Role, Salary, Location, Fit verdict, Resume file, Cover letter needed, Notes, Status, Date. Append each batch under a dated batch label. Deliver it as an .xlsx file when file generation is available; otherwise keep it as a clean Markdown table the user can copy.
+1. **Check the tracker first** — never process a company/role already reviewed or already applied to (including rows imported from the user's pre-existing spreadsheet). Maintain a cumulative tracker with columns: Company, Role, Salary, Location, Fit verdict, Resume file, Cover letter needed, Proof of work, Notes, Status, Date. Append each batch under a dated batch label. Deliver it as an .xlsx file when file generation is available; otherwise keep it as a clean Markdown table the user can copy.
 2. **Rank into three tiers with blunt reasons:**
    - **Strong**: requirements match, level match, pay at/above the user's stated band. Build immediately.
    - **Stretch**: 1-2 real gaps (title, years, one hard skill). Build, and name the wall the user will hit.
@@ -81,15 +83,29 @@ For every fetched job:
 3. **Flag missing requirements per job** (honesty rule 3) before building, so the user can supply real examples that strengthen the resume.
 4. **Generate one tailored resume per viable job** using the master as the base: rewrite the summary in the job's vocabulary, re-angle 2-4 bullets per relevant role toward the job's stated responsibilities (their exact phrases where truthful), reorder skills so the job's requirements lead, and keep everything else inherited. 2 pages. Deliver as docx + pdf named `Firstname_Lastname_Resume_Company.docx` when file generation is available, or as copy-paste text otherwise (same fallback as Phase 2).
 5. **Reviewer pass — fresh eyes before presenting.** Re-read each tailored resume as if you were the recruiter screening for *this* posting, not the person who wrote it. Ask: does every line map to a stated requirement? is any phrasing generic, padded, or buzzword-heavy? are any of the posting's must-have keywords the user genuinely has still missing or buried? Then revise once from that critique, and re-apply the relevance-weighted trimming and the ATS check (Phase 2, steps 5-6) against this specific posting before finalizing.
-6. **Present** each result plus the updated tracker, with a short per-job note on the angle taken and any interview risks to prepare for.
+6. **Present** each result plus the updated tracker, with a short per-job note on the angle taken and any interview risks to prepare for. For each Strong/Stretch job, offer the Phase 5 proof-of-work artifact as the next step.
+
+**Quality beats volume.** A few exceptional, complete applications — tailored resume + a proof-of-work artifact + a cover letter grounded in the user's real experience — outperform mass cold-email outreach. Hiring teams that post a role typically have someone reviewing every submitted application, so a standout application through the front door usually beats a cold DM. Steer the user toward depth on their best-fit roles rather than spraying.
+
+## Phase 5 — Proof of work (the stand-out artifact)
+
+A tailored resume is table stakes — in a flooded applicant pool it lands in the same pile as everyone else's. Candidates stand out by **showing upfront that they can do the job**: attaching evidence, not just claims. This phase is the game-changer, and almost nobody does it. Read `references/proof_of_work.md` for the full function→artifact map and guardrails.
+
+1. **Offer, don't auto-build.** For each Strong/Stretch job, propose a specific artifact matched to the *listed role's function* (name it concretely — e.g., "a target-account teardown of 8 accounts I'd pursue for them" for a BD role, "a working spreadsheet model for their reporting problem" for an Ops role). Build it once the user confirms. Don't generate one for every job unprompted.
+2. **Map artifact to function** using `references/proof_of_work.md`: BD/Sales → target-account teardown (+ a real converted-accounts list only if they have one); Ops/Analytics → a working tool (model, script, dashboard, SOP); Marketing → campaign teardown or sample asset; CS/Recruiting/other → mock flow, 30-60-90 plan, or a mini-analysis of a problem named in the JD.
+3. **Stay honest** (honesty rules 8-9): only real work is presented as done; prospective work is "here's how I'd approach it"; the artifact must serve the listed role, not off-target pet ideas. Ask the user for the real specifics (accounts, metrics, tools they've actually used) before building anything that claims a track record.
+4. **Respect no-AI postings.** If the posting or company prohibits AI-generated content, deliver the artifact as raw reference the user rewrites/rebuilds substantively in their own words, and say so plainly.
+5. **Deliver** as a real file when the environment can generate one (same fallback to clean copy-paste text otherwise), named like `Firstname_Lastname_ProofOfWork_Company.xlsx`/`.md`/`.pdf`, and record it in the tracker's **Proof of work** column.
 
 ## Screening questions and cover letters (on request)
 
-When the user pastes application questions: draft answers built only on their confirmed history, bracket unknowns, and for "why us" questions research the company briefly for one or two specific, current hooks. Keep salary answers consistent across applications (ask once for a walk-away number; warn if the user's answers drift more than ~$20k between comparable roles). Cover letters: 250-400 words, one page, same document styling as the resume.
+When the user pastes application questions: draft answers built only on their confirmed history, bracket unknowns, and for "why us" questions research the company briefly for one or two specific, current hooks. Keep salary answers consistent across applications (ask once for a walk-away number; warn if the user's answers drift more than ~$20k between comparable roles).
+
+**Cover letters are intake-driven — the user must supply the substance so it's real.** Never generate a cover letter from the resume alone. First ask the user to describe, in their own words: (a) the experience most relevant to *this* role, (b) the concrete impact they had (real numbers/outcomes where they have them), and (c) what specifically draws them to this company. Then draft a 250-400 word, one-page letter built only on what they gave you, in a plain human voice — no buzzwords, no AI tells, bracket anything they didn't provide. If the posting or company asks candidates to write their own letter or bans AI content (some do — Partiful is a known example), don't hand over a ready-to-send draft: give them an outline plus their own raw talking points and tell them to write it themselves in their own words. Same document styling as the resume when a file is generated.
 
 ## Output conventions
 
 - Resumes: Calibri, 2 pages max, verified via PDF page count before presenting (or kept to two pages' worth of content when delivered as text).
 - Never include the user's home street address; city/metro is enough.
 - Prefer real files (docx + pdf) whenever the environment can generate them; fall back to clean copy-paste text when it can't, and say which you're giving and why. Never silently error out because files aren't available.
-- The tracker is cumulative across the whole conversation — one file (or table), growing.
+- The tracker is cumulative across the whole conversation — one file (or table), growing. Columns include Company, Role, Salary, Location, Fit verdict, Resume file, Cover letter needed, Proof of work, Notes, Status, Date.
