@@ -38,6 +38,12 @@ tailor + credits flow, cover-letter intake endpoint, and cron/digests.
   it in a later step without changing the prompt. Users may also paste links as an extra input.
 - **Data model** in `supabase/migrations/0001_init.sql`. RLS is on for every user-owned table; the
   shared `jobs` / `search_cache` tables are written by the service role only.
+- **Schema isolation.** FirstHour reuses the existing **Dap_app** Supabase project
+  (`obpbpffietooawdizree`) but lives entirely in its own **`firsthour` schema**, with every table
+  **`firsthour_`-prefixed** — it never creates tables in `public` or touches another app's prod
+  tables. The Supabase clients (`lib/supabase/`) set `db.schema = "firsthour"`, so `.from("firsthour_jobs")`
+  resolves to `firsthour.firsthour_jobs`. Auth (`auth.users`) is shared project-wide, so instead of a
+  signup trigger we provision FirstHour rows lazily in-app (`lib/supabase/provisionUser.ts`).
 
 ## Local dev
 
