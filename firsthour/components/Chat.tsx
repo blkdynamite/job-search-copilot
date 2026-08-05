@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   ChatMessage,
   ContentBlock,
+  extractAtsUrls,
   LOADING_SETS,
+  MatchView,
   OPENING,
   PHASES,
 } from "@/lib/chat";
@@ -41,6 +43,10 @@ export default function Chat({ userEmail }: { userEmail: string }) {
   const [loadingSet, setLoadingSet] = useState<string[]>(LOADING_SETS["0"]);
   const [tick, setTick] = useState(0);
   const [hasResume, setHasResume] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [prefTitles, setPrefTitles] = useState("");
+  const [prefLocation, setPrefLocation] = useState("");
+  const [prefRemote, setPrefRemote] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,6 +66,16 @@ export default function Chat({ userEmail }: { userEmail: string }) {
     const text = input.trim();
     const file = pendingFile;
     if (!text && !file) return;
+
+    // Pasted ATS links → triage them directly (the "paste as extra input" path).
+    if (!file) {
+      const urls = extractAtsUrls(text);
+      if (urls.length) {
+        setInput("");
+        await pasteJobs(urls);
+        return;
+      }
+    }
     setError(null);
     setLoadingSet(file ? LOADING_SETS.file : LOADING_SETS[String(phase)] ?? LOADING_SETS["0"]);
     setTick(0);
@@ -213,6 +229,90 @@ export default function Chat({ userEmail }: { userEmail: string }) {
     }
   }
 
+  function summarizeMatches(matches: MatchView[]): string {
+    const c = (v: string) => matches.filter((m) => m.verdict === v).length;
+    return `**Fresh matches** — ${matches.length} shown · ${c("strong")} strong, ${c("stretch")} stretch, ${c("skip")} skip`;
+  }
+
+  async function runJobs(fetcher: () => Promise<Response>, actionLabel: string) {
+    if (loading) return;
+    setError(null);
+    setLoadingSet(LOADING_SETS["3"]);
+    setTick(0);
+    setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", display: actionLabel, api: null }]);
+    try {
+      const resp = await fetcher();
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || "Job search failed.");
+      if (data.needPrefs) {
+        setMessages((prev) => prev.slice(0, -1));
+        setLoading(false);
+        setPrefsOpen(true);
+        return;
+      }
+      if (data.needResume) {
+        setMessages((prev) => prev.slice(0, -1));
+        setLoading(false);
+        setError("Upload a resume first so I can triage fit.");
+        return;
+      }
+      const matches: MatchView[] = data.matches || [];
+      const deadNote =
+        data.dead && data.dead.length ? `\n\n${data.dead.length} link(s) looked closed or unreachable.` : "";
+      const display =
+        (matches.length ? summarizeMatches(matches) : "No fresh matches yet — try more titles or check back soon.") +
+        deadNote;
+      setMessages((prev) => [...prev, { role: "assistant", display, api: null, phase: 4, matches }]);
+      setPhase((p) => Math.max(p, matches.length ? 4 : 3));
+    } catch (e) {
+      setMessages((prev) => prev.slice(0, -1));
+      setError(e instanceof Error ? e.message : "Job search failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function findJobs() {
+    return runJobs(
+      () => fetch("/api/jobs/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
+      "🔎 Find fresh jobs"
+    );
+  }
+
+  function pasteJobs(urls: string[]) {
+    return runJobs(
+      () =>
+        fetch("/api/jobs/paste", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls }),
+        }),
+      `🔗 Triage ${urls.length} pasted link${urls.length > 1 ? "s" : ""}`
+    );
+  }
+
+  async function savePrefs() {
+    const titles = prefTitles.split(",").map((s) => s.trim()).filter(Boolean);
+    if (!titles.length) {
+      setError("Add at least one target title.");
+      return;
+    }
+    setError(null);
+    try {
+      const resp = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_titles: titles, city_metro: prefLocation, remote_pref: prefRemote ? "remote" : "" }),
+      });
+      if (!resp.ok) throw new Error("Could not save preferences.");
+      setPrefsOpen(false);
+      await findJobs();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save preferences.");
+    }
+  }
+
   function onKey(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -326,6 +426,49 @@ export default function Chat({ userEmail }: { userEmail: string }) {
                     )}
                   </div>
                 )}
+                {m.matches && m.matches.length > 0 && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {m.matches.map((mv) => {
+                      const vc =
+                        mv.verdict === "strong"
+                          ? { bg: "#0E7490", fg: "#FFFFFF" }
+                          : mv.verdict === "stretch"
+                            ? { bg: "#FFF6ED", fg: "#B54708" }
+                            : { bg: "#F2F4F7", fg: "#667085" };
+                      return (
+                        <a
+                          key={mv.jobId}
+                          href={mv.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block px-3 py-2 rounded-xl"
+                          style={{ border: "1px solid #E4E9F0", background: "#F8FAFC" }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded"
+                              style={{ background: vc.bg, color: vc.fg }}
+                            >
+                              {mv.verdict}
+                            </span>
+                            <span className="font-semibold text-ink text-xs">
+                              {mv.company} — {mv.title}
+                            </span>
+                          </div>
+                          <div className="text-xs mt-1" style={{ color: "#667085" }}>
+                            {mv.location || "—"} · {mv.age}
+                            {mv.aiProhibited ? " · ⚠ no-AI policy" : ""}
+                          </div>
+                          {mv.reason && (
+                            <div className="text-xs mt-1" style={{ color: "#344054" }}>
+                              {mv.reason}
+                            </div>
+                          )}
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -352,7 +495,7 @@ export default function Chat({ userEmail }: { userEmail: string }) {
       <div className="px-4 pb-5 pt-2 bg-dawn">
         <div className="max-w-2xl mx-auto">
           {hasResume && (
-            <div className="mb-2">
+            <div className="mb-2 flex flex-wrap gap-2">
               <button
                 onClick={buildTemplate}
                 disabled={loading}
@@ -363,8 +506,62 @@ export default function Chat({ userEmail }: { userEmail: string }) {
                   border: "1px solid #FED7AA",
                 }}
               >
-                🛠️ Build resume template (.docx + .pdf)
+                🛠️ Build resume template
               </button>
+              <button
+                onClick={() => findJobs()}
+                disabled={loading}
+                className="text-xs font-display font-semibold px-3 py-2 rounded-xl"
+                style={{
+                  background: loading ? "#F2F4F7" : "#E0F2F7",
+                  color: loading ? "#98A2B3" : "#0E4A5C",
+                  border: "1px solid #A5DCE9",
+                }}
+              >
+                🔎 Find fresh jobs
+              </button>
+            </div>
+          )}
+          {prefsOpen && (
+            <div className="mb-2 p-3 rounded-2xl bg-white flex flex-col gap-2" style={{ border: "1px solid #D7DEE8" }}>
+              <p className="text-xs font-display font-semibold text-ink">Where should I hunt?</p>
+              <input
+                value={prefTitles}
+                onChange={(e) => setPrefTitles(e.target.value)}
+                placeholder="Target titles, comma-separated (e.g. Product Manager, Operations Manager)"
+                className="px-3 py-2 rounded-xl outline-none text-sm bg-white text-ink"
+                style={{ border: "1px solid #D7DEE8" }}
+              />
+              <div className="flex gap-2">
+                <input
+                  value={prefLocation}
+                  onChange={(e) => setPrefLocation(e.target.value)}
+                  placeholder="City / metro"
+                  className="flex-1 px-3 py-2 rounded-xl outline-none text-sm bg-white text-ink"
+                  style={{ border: "1px solid #D7DEE8" }}
+                />
+                <label className="flex items-center gap-1 text-xs" style={{ color: "#475467" }}>
+                  <input type="checkbox" checked={prefRemote} onChange={(e) => setPrefRemote(e.target.checked)} />
+                  Remote
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={savePrefs}
+                  disabled={loading}
+                  className="text-xs font-display font-semibold px-3 py-2 rounded-xl text-white"
+                  style={{ background: "#DC6803" }}
+                >
+                  Save &amp; find jobs
+                </button>
+                <button
+                  onClick={() => setPrefsOpen(false)}
+                  className="text-xs font-mono px-3 py-2 rounded-xl"
+                  style={{ color: "#475467", background: "#F2F4F7" }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
           {pendingFile && (
