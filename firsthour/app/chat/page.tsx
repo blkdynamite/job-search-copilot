@@ -20,5 +20,11 @@ export default async function ChatPage() {
     // non-fatal; provisioning also runs at magic-link confirm.
   }
 
-  return <Chat userEmail={user.email ?? ""} />;
+  const { data: row } = await supabase
+    .from("firsthour_users")
+    .select("tailor_credits")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return <Chat userEmail={user.email ?? ""} initialCredits={row?.tailor_credits ?? 0} />;
 }

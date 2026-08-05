@@ -33,8 +33,9 @@ function toApiMessages(msgs: ChatMessage[]) {
     );
 }
 
-export default function Chat({ userEmail }: { userEmail: string }) {
+export default function Chat({ userEmail, initialCredits }: { userEmail: string; initialCredits: number }) {
   const [messages, setMessages] = useState<ChatMessage[]>([OPENING]);
+  const [credits, setCredits] = useState(initialCredits);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState(0);
@@ -292,6 +293,48 @@ export default function Chat({ userEmail }: { userEmail: string }) {
     );
   }
 
+  async function tailorJob(jobId: string, label: string) {
+    if (loading) return;
+    setError(null);
+    setLoadingSet(LOADING_SETS["4"]);
+    setTick(0);
+    setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", display: `✂️ Tailor for ${label}`, api: null }]);
+    try {
+      const resp = await fetch("/api/tailor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        if (typeof data.remainingCredits === "number") setCredits(data.remainingCredits);
+        throw new Error(data.error || "Tailoring failed.");
+      }
+      if (typeof data.remainingCredits === "number") setCredits(data.remainingCredits);
+
+      const diffLines = (data.diffs || [])
+        .map((d: { before: string; after: string }) => `Before: ${d.before}\nAfter: ${d.after}`)
+        .join("\n\n");
+      const gapNote =
+        data.gaps && data.gaps.length
+          ? `\n\n**Gaps to close honestly:** ${data.gaps.join("; ")}. If you have real examples, tell me and I'll work them in.`
+          : "";
+      const display = `**Tailored for ${data.company || label}**\n\n${data.summary_of_fixes}${diffLines ? `\n\n${diffLines}` : ""}${gapNote}\n\n_${data.remainingCredits} tailor credit${data.remainingCredits === 1 ? "" : "s"} left._`;
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", display, api: null, phase: 4, files: { docxUrl: data.docxUrl ?? null, pdfUrl: data.pdfUrl ?? null } },
+      ]);
+      setPhase((p) => Math.max(p, 4));
+    } catch (e) {
+      setMessages((prev) => prev.slice(0, -1));
+      setError(e instanceof Error ? e.message : "Tailoring failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function savePrefs() {
     const titles = prefTitles.split(",").map((s) => s.trim()).filter(Boolean);
     if (!titles.length) {
@@ -338,6 +381,13 @@ export default function Chat({ userEmail }: { userEmail: string }) {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <span
+            className="text-xs font-mono px-2 py-1 rounded-lg"
+            title="Tailored resumes remaining"
+            style={{ color: "#0E4A5C", background: "#E0F2F7" }}
+          >
+            {credits} {credits === 1 ? "credit" : "credits"}
+          </span>
           {userEmail && (
             <span className="text-xs font-mono hidden sm:inline" style={{ color: "#98A2B3" }}>
               {userEmail}
@@ -436,12 +486,9 @@ export default function Chat({ userEmail }: { userEmail: string }) {
                             ? { bg: "#FFF6ED", fg: "#B54708" }
                             : { bg: "#F2F4F7", fg: "#667085" };
                       return (
-                        <a
+                        <div
                           key={mv.jobId}
-                          href={mv.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block px-3 py-2 rounded-xl"
+                          className="px-3 py-2 rounded-xl"
                           style={{ border: "1px solid #E4E9F0", background: "#F8FAFC" }}
                         >
                           <div className="flex items-center gap-2">
@@ -464,7 +511,28 @@ export default function Chat({ userEmail }: { userEmail: string }) {
                               {mv.reason}
                             </div>
                           )}
-                        </a>
+                          <div className="flex items-center gap-3 mt-2">
+                            <a
+                              href={mv.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-mono"
+                              style={{ color: "#0E7490" }}
+                            >
+                              View posting ↗
+                            </a>
+                            {mv.verdict !== "skip" && (
+                              <button
+                                onClick={() => tailorJob(mv.jobId, mv.company || "this job")}
+                                disabled={loading}
+                                className="text-xs font-display font-semibold px-2 py-1 rounded-lg"
+                                style={{ background: loading ? "#F2F4F7" : "#DC6803", color: loading ? "#98A2B3" : "#FFFFFF" }}
+                              >
+                                ✂️ Tailor for this job
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
